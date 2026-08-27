@@ -16,17 +16,24 @@
   let previewUrl;
   const showFile = () => {
     const selected = file.files[0];
-    document.querySelector('#fileName').textContent = selected?.name || 'TXT or PDF · Maximum 10 MB';
+    document.querySelector('#fileName').textContent = selected?.name || 'PDF, Word, TXT or image · Maximum 10 MB';
     const preview = document.querySelector('#filePreview');
     const pdfPreview = document.querySelector('#pdfPreview');
+    const imagePreview = document.querySelector('#imagePreview');
     const textPreview = document.querySelector('#textPreview');
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    pdfPreview.classList.add('d-none'); textPreview.classList.add('d-none');
+    pdfPreview.classList.add('d-none'); imagePreview.classList.add('d-none'); textPreview.classList.add('d-none');
     if (!selected) { preview.classList.add('d-none'); return; }
     preview.classList.remove('d-none');
-    document.querySelector('#previewType').textContent = selected.type === 'application/pdf' ? 'PDF · use controls to change pages' : 'Text preview';
+    const extension = selected.name.toLowerCase().split('.').pop();
+    const isImage = ['png', 'jpg', 'jpeg', 'webp'].includes(extension);
+    document.querySelector('#previewType').textContent = extension === 'pdf' ? 'PDF · use controls to change pages' : isImage ? 'Image · text will be extracted with OCR' : extension === 'docx' ? 'Word document · preview after analysis' : 'Text preview';
     if (selected.type === 'application/pdf' || selected.name.toLowerCase().endsWith('.pdf')) {
       previewUrl = URL.createObjectURL(selected); pdfPreview.src = `${previewUrl}#toolbar=1&navpanes=1&view=FitH`; pdfPreview.classList.remove('d-none');
+    } else if (isImage) {
+      previewUrl = URL.createObjectURL(selected); imagePreview.src = previewUrl; imagePreview.classList.remove('d-none');
+    } else if (extension === 'docx') {
+      textPreview.textContent = 'Word document ready. Click Search & Analyze to extract and review its content.'; textPreview.classList.remove('d-none');
     } else {
       const reader = new FileReader(); reader.onload = () => { textPreview.textContent = reader.result; textPreview.classList.remove('d-none'); }; reader.readAsText(selected);
     }

@@ -1,4 +1,5 @@
 import math
+import base64
 import json
 import os
 import re
@@ -15,6 +16,7 @@ from io import BytesIO
 
 from flask import Flask, Response, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from pypdf import PdfReader
+from docx import Document
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
@@ -34,7 +36,8 @@ RUNTIME_DATA_ROOT = os.environ.get("VERITASCHECK_DATA_ROOT") or (tempfile.gettem
 DATABASE_PATH = os.environ.get("VERITASCHECK_DATABASE_PATH") or os.path.join(RUNTIME_DATA_ROOT, "database", "veritascheck.db")
 UPLOADS_ROOT = os.environ.get("VERITASCHECK_UPLOADS_PATH") or os.path.join(RUNTIME_DATA_ROOT, "uploads")
 
-ALLOWED_EXTENSIONS = {"txt", "pdf"}
+ALLOWED_EXTENSIONS = {"txt", "pdf", "docx", "png", "jpg", "jpeg", "webp"}
+IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 MIN_WORDS = 20
 MATCH_THRESHOLD = 0.55
 MAX_MATCHES = 20
@@ -240,19 +243,55 @@ def find_matches(document_pages, sources):
     return sorted(matches, key=lambda item: item["score"], reverse=True)[:max(MAX_MATCHES, len(sources))]
 
 
+def extract_image_text(data, extension):
+    if not OPENROUTER_API_KEY:
+        raise ValueError("Image OCR is not configured. Add OPENROUTER_API_KEY and redeploy the application.")
+    mime = "image/jpeg" if extension in {"jpg", "jpeg"} else f"image/{extension}"
+    encoded = base64.b64encode(data).decode("ascii")
+    payload = {"model": OPENROUTER_MODEL, "temperature": 0, "messages": [{"role": "user", "content": [
+        {"type": "text", "text": "Extract every readable word from this document image in natural reading order. Preserve paragraphs and line breaks. Return only the extracted text, without commentary or Markdown fences."},
+        {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{encoded}"}},
+    ]}]}
+    api_request = urllib.request.Request(
+        "https://openrouter.ai/api/v1/chat/completions", data=json.dumps(payload).encode("utf-8"),
+        headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json",
+                 "HTTP-Referer": "http://127.0.0.1:5000", "X-OpenRouter-Title": "SourceTrace AI"}, method="POST")
+    try:
+        with urllib.request.urlopen(api_request, timeout=90) as response:
+            result = json.loads(response.read().decode("utf-8"))
+        content = result["choices"][0]["message"]["content"]
+        if isinstance(content, list):
+            content = "\n".join(item.get("text", "") for item in content if isinstance(item, dict))
+        text = str(content or "").strip()
+        if not text:
+            raise ValueError("No readable text was detected in this image.")
+        return text
+    except (urllib.error.URLError, urllib.error.HTTPError, KeyError, json.JSONDecodeError) as error:
+        raise ValueError("Image OCR could not be completed. Check the API key, model access, and image clarity.") from error
+
+
 def extract_upload(upload):
     filename = secure_filename(upload.filename or "")
     if "." not in filename:
-        raise ValueError("Please choose a TXT or PDF file.")
+        raise ValueError("Please choose a TXT, PDF, DOCX, or image file.")
     extension = filename.rsplit(".", 1)[1].lower()
     if extension not in ALLOWED_EXTENSIONS:
-        raise ValueError("Unsupported file type. Please upload a TXT or PDF file.")
+        raise ValueError("Unsupported file type. Upload TXT, PDF, DOCX, PNG, JPG, JPEG, or WEBP.")
     data = upload.read()
     if not data:
         raise ValueError("The selected file is empty.")
     try:
         if extension == "txt":
             pages = [data.decode("utf-8-sig")]
+        elif extension == "docx":
+            document = Document(BytesIO(data))
+            content = [paragraph.text for paragraph in document.paragraphs if paragraph.text.strip()]
+            for table in document.tables:
+                for row in table.rows:
+                    content.append(" | ".join(cell.text.strip() for cell in row.cells))
+            pages = ["\n".join(content)]
+        elif extension in IMAGE_EXTENSIONS:
+            pages = [extract_image_text(data, extension)]
         else:
             pages = []
             for page in PdfReader(BytesIO(data)).pages:
@@ -262,6 +301,8 @@ def extract_upload(upload):
                 except (TypeError, ValueError):
                     pages.append(page.extract_text() or "")
         return {"name": filename, "pages": pages, "text": "\n".join(pages), "data": data, "extension": extension}
+    except ValueError:
+        raise
     except Exception as error:
         raise ValueError("We could not read this file. Check that it is valid and not encrypted.") from error
 
@@ -504,7 +545,7 @@ def analyze():
             text = extracted_document["text"].strip()
             document_pages = extracted_document["pages"]
         if not text:
-            return jsonify(ok=False, error="Paste your document or upload a TXT/PDF file."), 400
+            return jsonify(ok=False, error="Paste text or upload a TXT, PDF, DOCX, or image file."), 400
         words = tokenize(text)
         if len(words) < MIN_WORDS:
             return jsonify(ok=False, error=f"Please provide at least {MIN_WORDS} words for a meaningful analysis."), 400

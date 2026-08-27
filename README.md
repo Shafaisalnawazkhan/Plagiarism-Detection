@@ -4,7 +4,7 @@ VeritasCheck is a free academic demo for comparing a document with user-supplied
 
 ## Features
 
-- Paste text or upload TXT/PDF documents (maximum 10 MB)
+- Paste text or upload TXT, PDF, DOCX, PNG, JPG, JPEG, or WEBP documents (maximum 10 MB)
 - Live word and character counts
 - Multiple TXT/PDF reference files plus pasted reference-content comparison
 - Matched source filename, page/line location, and per-source similarity
@@ -16,7 +16,7 @@ VeritasCheck is a free academic demo for comparing a document with user-supplied
 
 ## Stack and structure
 
-Python 3, Flask, Werkzeug, SQLite, pypdf, HTML5, Bootstrap 5, custom CSS, and vanilla JavaScript.
+Python 3, Flask, Werkzeug, SQLite, pypdf, python-docx, OpenRouter vision OCR, HTML5, Bootstrap 5, custom CSS, and vanilla JavaScript.
 
 ```text
 app.py                 Flask routes, extraction, and similarity engine
