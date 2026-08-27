@@ -356,6 +356,7 @@ def discover_web_sources(document):
             "Use web search repeatedly when useful. Return a brief source list with citations; never invent URLs.\n\n" + excerpts)}],
         "tools": [{"type": "openrouter:web_search", "parameters": {"engine": "auto", "max_total_results": 12}}],
         "temperature": 0,
+        "max_tokens": 1200,
     }
     api_request = urllib.request.Request("https://openrouter.ai/api/v1/chat/completions",
         data=json.dumps(payload).encode("utf-8"), method="POST",
@@ -365,8 +366,21 @@ def discover_web_sources(document):
         with urllib.request.urlopen(api_request, timeout=90) as response:
             response_data = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
-        detail = error.read().decode("utf-8", errors="replace")[:500]
-        raise ValueError(f"Web search provider rejected the request ({error.code}). Check the API key, model, and credits. {detail}") from error
+        try:
+            error_data = json.loads(error.read().decode("utf-8", errors="replace"))
+            provider_message = str(error_data.get("error", {}).get("message", ""))
+        except (json.JSONDecodeError, AttributeError):
+            provider_message = ""
+        app.logger.warning("OpenRouter web search failed (%s): %s", error.code, provider_message[:300])
+        if error.code == 401:
+            message = "Web search authorization failed. Update OPENROUTER_API_KEY in Vercel and redeploy."
+        elif error.code == 402:
+            message = "The web-search provider has insufficient credits for this request. Add a small OpenRouter balance or choose a lower-cost model."
+        elif error.code == 429:
+            message = "Web search is temporarily rate-limited. Wait a minute and try again."
+        else:
+            message = f"Web search provider returned error {error.code}. Please try again shortly."
+        raise ValueError(message) from error
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
         raise ValueError("Web source discovery could not connect or returned an invalid response.") from error
     choices = response_data.get("choices") or []
@@ -392,7 +406,7 @@ def analyze_writing_signals(document):
     if not OPENROUTER_API_KEY:
         return {"ai_score": None, "grammar_score": None, "note": "Writing analysis is not configured."}
     sample = document[:16000]
-    payload = {"model": OPENROUTER_MODEL, "temperature": 0,
+    payload = {"model": OPENROUTER_MODEL, "temperature": 0, "max_tokens": 300,
                "messages": [{"role": "system", "content": (
                    "You assess writing signals. Return only strict JSON with ai_score, grammar_score, and note. "
                    "Both scores are numbers from 0 to 100. ai_score is an experimental stylistic signal, never a claim of authorship. "
