@@ -294,7 +294,7 @@ def discover_web_sources(document):
     api_request = urllib.request.Request("https://openrouter.ai/api/v1/chat/completions",
         data=json.dumps(payload).encode("utf-8"), method="POST",
         headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json",
-                 "HTTP-Referer": "http://127.0.0.1:5000", "X-OpenRouter-Title": "VeritasCheck"})
+                 "HTTP-Referer": "http://127.0.0.1:5000", "X-OpenRouter-Title": "SourceTrace AI"})
     try:
         with urllib.request.urlopen(api_request, timeout=90) as response:
             response_data = json.loads(response.read().decode("utf-8"))
@@ -335,7 +335,7 @@ def analyze_writing_signals(document):
     api_request = urllib.request.Request("https://openrouter.ai/api/v1/chat/completions",
         data=json.dumps(payload).encode("utf-8"), method="POST",
         headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json",
-                 "HTTP-Referer": "http://127.0.0.1:5000", "X-OpenRouter-Title": "VeritasCheck"})
+                 "HTTP-Referer": "http://127.0.0.1:5000", "X-OpenRouter-Title": "SourceTrace AI"})
     try:
         with urllib.request.urlopen(api_request, timeout=90) as response:
             data = json.loads(response.read().decode("utf-8"))
@@ -444,12 +444,12 @@ def export_report(report_id, format_name):
     if not report:
         return jsonify(ok=False, error="Report not found."), 404
     result = json.loads(report["result_json"])
-    base_name = f"veritascheck-report-{report_id}"
+    base_name = f"sourcetrace-report-{report_id}"
     if format_name == "json":
         return Response(json.dumps(result, indent=2), mimetype="application/json",
                         headers={"Content-Disposition": f"attachment; filename={base_name}.json"})
     if format_name == "txt":
-        lines = ["VERITASCHECK ORIGINALITY RECEIPT", f"Report ID: VC-{report_id:06d}",
+        lines = ["SOURCETRACE AI ORIGINALITY RECEIPT", f"Report ID: ST-{report_id:06d}",
                  f"Document: {report['filename']}", f"Words: {report['words']}",
                  f"Similarity: {report['similarity']}%", f"Matched passages: {report['matches']}", ""]
         for index, match in enumerate(result.get("matches", []), 1):

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}How It Works — VeritasCheck{% endblock %}
+{% block title %}How It Works — SourceTrace AI{% endblock %}
 {% block content %}
-<section class="page-header text-center"><div class="container narrow"><span class="eyebrow">Transparent by design</span><h1>A simple path from text to evidence.</h1><p>VeritasCheck compares the content you provide. It does not search the internet or issue a definitive plagiarism verdict.</p></div></section>
+<section class="page-header text-center"><div class="container narrow"><span class="eyebrow">Transparent by design</span><h1>A simple path from text to evidence.</h1><p>SourceTrace AI searches public web evidence, verifies similar passages, and presents sources for human review.</p></div></section>
 <section class="section-space pt-0"><div class="container"><div class="row g-4">
   {% for number, icon, title, text in [('01','bi-file-text','Input','Paste text or upload a PDF/TXT document.'),('02','bi-arrow-left-right','Compare','The backend calculates similarity against your supplied reference content.'),('03','bi-clipboard2-check','Review','Inspect similarity percentages and potentially matching passages.')] %}
   <div class="col-md-4"><article class="step-card"><span class="step-number">{{ number }}</span><span class="icon-box"><i class="bi {{ icon }}"></i></span><h2>{{ title }}</h2><p>{{ text }}</p></article></div>{% endfor %}

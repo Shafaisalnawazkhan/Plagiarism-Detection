@@ -1,0 +1,37 @@
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  background: transparent;
+}
+
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.navbar-brand b {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.auth-card > .brand-mark {
+  background: url('/static/source-trace-mark.svg') center / contain no-repeat;
+}
+
+.auth-card > .brand-mark i {
+  display: none;
+}
+
+.receipt-brand > span {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  background: transparent;
+}
+
+.receipt-brand > span img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
