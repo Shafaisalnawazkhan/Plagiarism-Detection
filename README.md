@@ -20,6 +20,8 @@ Python 3, Flask, Werkzeug, SQLite, pypdf, python-docx, OpenRouter vision OCR, HT
 
 Image OCR uses `OPENROUTER_VISION_MODEL` (`openrouter/free` by default), which lets OpenRouter select a free model that supports image input. You can override it with another vision-capable model slug.
 
+Web discovery and writing-signal analysis use `OPENROUTER_MODEL` (`nvidia/nemotron-3.5-lightning:free` by default). Image OCR remains on the separate vision router because the Lightning model is used for text and tool-calling tasks.
+
 ```text
 app.py                 Flask routes, extraction, and similarity engine
 requirements.txt       Python dependencies
