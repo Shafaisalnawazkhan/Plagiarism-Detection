@@ -6,6 +6,7 @@ import sqlite3
 import csv
 import urllib.error
 import urllib.request
+import tempfile
 from urllib.parse import urlparse
 from collections import Counter
 from datetime import datetime, timezone
@@ -28,7 +29,10 @@ except ImportError:
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 app.config["SECRET_KEY"] = os.environ.get("VERITASCHECK_SECRET", "dev-only-change-this-key")
-DATABASE_PATH = os.path.join(app.root_path, "database", "veritascheck.db")
+IS_VERCEL = bool(os.environ.get("VERCEL"))
+RUNTIME_DATA_ROOT = os.environ.get("VERITASCHECK_DATA_ROOT") or (tempfile.gettempdir() if IS_VERCEL else app.root_path)
+DATABASE_PATH = os.environ.get("VERITASCHECK_DATABASE_PATH") or os.path.join(RUNTIME_DATA_ROOT, "database", "veritascheck.db")
+UPLOADS_ROOT = os.environ.get("VERITASCHECK_UPLOADS_PATH") or os.path.join(RUNTIME_DATA_ROOT, "uploads")
 
 ALLOWED_EXTENSIONS = {"txt", "pdf"}
 MIN_WORDS = 20
@@ -472,7 +476,7 @@ def report_pdf(report_id):
     if not report or not report["file_path"]:
         return jsonify(ok=False, error="Original PDF is not available for this report."), 404
     absolute_path = os.path.abspath(report["file_path"])
-    uploads_root = os.path.abspath(os.path.join(app.root_path, "uploads"))
+    uploads_root = os.path.abspath(UPLOADS_ROOT)
     if os.path.commonpath([absolute_path, uploads_root]) != uploads_root or not os.path.isfile(absolute_path):
         return jsonify(ok=False, error="Original PDF could not be found."), 404
     return send_file(absolute_path, mimetype="application/pdf", download_name="document.pdf")
@@ -553,7 +557,7 @@ def analyze():
             result["saved"] = True
             result["report_id"] = cursor.lastrowid
             if extracted_document and extracted_document.get("extension") == "pdf":
-                user_upload_dir = os.path.join(app.root_path, "uploads", str(session["user_id"]))
+                user_upload_dir = os.path.join(UPLOADS_ROOT, str(session["user_id"]))
                 os.makedirs(user_upload_dir, exist_ok=True)
                 stored_path = os.path.join(user_upload_dir, f"report-{cursor.lastrowid}.pdf")
                 with open(stored_path, "wb") as stored_pdf:

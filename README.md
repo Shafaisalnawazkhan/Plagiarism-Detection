@@ -44,6 +44,10 @@ python app.py
 
 Open `http://127.0.0.1:5000`.
 
+### Vercel runtime storage
+
+On Vercel, VeritasCheck automatically places SQLite and uploaded PDFs under writable `/tmp`; the deployed `/var/task` bundle is read-only. `/tmp` is ephemeral and may disappear between function instances or deployments, so production accounts, history, and documents require an external persistent database/object store. Configure `VERITASCHECK_SECRET` in the Vercel project environment and never commit `.env`.
+
 ## API
 
 `POST /api/analyze` accepts `multipart/form-data` fields:
