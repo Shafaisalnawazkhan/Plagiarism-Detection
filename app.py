@@ -251,7 +251,11 @@ def extract_image_text(data, extension):
     encoded = base64.b64encode(data).decode("ascii")
     payload = {"model": OPENROUTER_VISION_MODEL, "temperature": 0, "max_tokens": 6000,
                "messages": [{"role": "user", "content": [
-        {"type": "text", "text": "Extract every readable word from this document image in natural reading order. Preserve paragraphs and line breaks. Return only the extracted text, without commentary or Markdown fences."},
+        {"type": "text", "text": (
+            "Act as a precise OCR engine, not a summarizer. Transcribe ALL readable text in this document image, "
+            "including headings, captions, labels, numbered steps, lists, tables, and small print. Scan from top-left "
+            "to bottom-right in natural reading order. Preserve paragraphs and line breaks. Do not describe the image, "
+            "omit repeated-looking sections, or shorten the content. Return only the verbatim extracted text without commentary or Markdown fences.")},
         {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{encoded}"}},
     ]}]}
     api_request = urllib.request.Request(
@@ -586,7 +590,10 @@ def analyze():
         if not text:
             return jsonify(ok=False, error="Paste text or upload a TXT, PDF, DOCX, or image file."), 400
         words = tokenize(text)
-        if len(words) < MIN_WORDS:
+        minimum_words = 5 if extracted_document and extracted_document.get("extension") in IMAGE_EXTENSIONS else MIN_WORDS
+        if len(words) < minimum_words:
+            if extracted_document and extracted_document.get("extension") in IMAGE_EXTENSIONS:
+                return jsonify(ok=False, error="Only a few readable words were detected. Upload a clearer or higher-resolution image."), 400
             return jsonify(ok=False, error=f"Please provide at least {MIN_WORDS} words for a meaningful analysis."), 400
         sources = []
         if reference:
