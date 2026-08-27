@@ -344,10 +344,32 @@ def status_for(score):
     return "High similarity", "danger"
 
 
+def build_search_passages(document):
+    """Create useful search queries from prose as well as short OCR labels."""
+    fragments = split_sentences(document)
+    passages = [fragment for fragment in fragments if 8 <= len(tokenize(fragment)) <= 55]
+    buffer = []
+    for fragment in fragments:
+        words = tokenize(fragment)
+        if not words or len(words) > 55:
+            continue
+        buffer.append(fragment)
+        buffered_words = len(tokenize(" ".join(buffer)))
+        if buffered_words >= 8:
+            passages.append(" ".join(buffer))
+            buffer = []
+    if buffer and len(tokenize(" ".join(buffer))) >= 5:
+        passages.append(" ".join(buffer))
+    if not passages and len(tokenize(document)) >= 5:
+        passages.append(" ".join(document.split())[:800])
+    # Preserve order while removing repeated OCR fragments.
+    return list(dict.fromkeys(passages))
+
+
 def discover_web_sources(document):
     if not OPENROUTER_API_KEY:
         raise ValueError("Web source discovery is not configured. Add OPENROUTER_API_KEY to .env and restart Flask.")
-    candidates = [sentence for sentence in split_sentences(document) if 8 <= len(tokenize(sentence)) <= 55]
+    candidates = build_search_passages(document)
     # Search a bounded, representative set to control latency and search cost.
     candidates = sorted(candidates, key=lambda value: len(tokenize(value)), reverse=True)[:12]
     if not candidates:
