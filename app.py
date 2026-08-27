@@ -43,6 +43,7 @@ MATCH_THRESHOLD = 0.55
 MAX_MATCHES = 20
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "openrouter/auto")
+OPENROUTER_VISION_MODEL = os.environ.get("OPENROUTER_VISION_MODEL", "openrouter/free")
 MODEL_PATH = os.environ.get("VERITASCHECK_MODEL_PATH", os.path.join(app.root_path, "veritas_trained_model"))
 SEMANTIC_MODEL = None
 SEMANTIC_UTIL = None
@@ -248,7 +249,8 @@ def extract_image_text(data, extension):
         raise ValueError("Image OCR is not configured. Add OPENROUTER_API_KEY and redeploy the application.")
     mime = "image/jpeg" if extension in {"jpg", "jpeg"} else f"image/{extension}"
     encoded = base64.b64encode(data).decode("ascii")
-    payload = {"model": OPENROUTER_MODEL, "temperature": 0, "messages": [{"role": "user", "content": [
+    payload = {"model": OPENROUTER_VISION_MODEL, "temperature": 0, "max_tokens": 6000,
+               "messages": [{"role": "user", "content": [
         {"type": "text", "text": "Extract every readable word from this document image in natural reading order. Preserve paragraphs and line breaks. Return only the extracted text, without commentary or Markdown fences."},
         {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{encoded}"}},
     ]}]}
@@ -266,8 +268,31 @@ def extract_image_text(data, extension):
         if not text:
             raise ValueError("No readable text was detected in this image.")
         return text
-    except (urllib.error.URLError, urllib.error.HTTPError, KeyError, json.JSONDecodeError) as error:
-        raise ValueError("Image OCR could not be completed. Check the API key, model access, and image clarity.") from error
+    except urllib.error.HTTPError as error:
+        try:
+            error_data = json.loads(error.read().decode("utf-8"))
+            provider_message = str(error_data.get("error", {}).get("message", ""))
+        except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
+            provider_message = ""
+        if error.code == 401:
+            message = "Image OCR authorization failed. Update OPENROUTER_API_KEY in Vercel and redeploy."
+        elif error.code == 402:
+            message = "Image OCR requires an available OpenRouter model. Enable free-model access or add provider credits."
+        elif error.code == 413:
+            message = "This image is too large for OCR. Upload a compressed image under 4 MB."
+        elif error.code == 429:
+            message = "The free image OCR limit is temporarily busy. Wait a minute and try again."
+        elif "model" in provider_message.lower() or "image" in provider_message.lower():
+            message = "The configured OCR model could not process this image. Set OPENROUTER_VISION_MODEL=openrouter/free and redeploy."
+        else:
+            message = f"Image OCR provider returned error {error.code}. Please try again shortly."
+        app.logger.warning("OpenRouter image OCR failed (%s): %s", error.code, provider_message[:300])
+        raise ValueError(message) from error
+    except urllib.error.URLError as error:
+        app.logger.warning("OpenRouter image OCR network failure: %s", error.reason)
+        raise ValueError("Image OCR service could not be reached. Please try again shortly.") from error
+    except (KeyError, json.JSONDecodeError, TypeError) as error:
+        raise ValueError("Image OCR returned an unreadable response. Please try another image.") from error
 
 
 def extract_upload(upload):

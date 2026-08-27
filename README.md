@@ -18,6 +18,8 @@ VeritasCheck is a free academic demo for comparing a document with user-supplied
 
 Python 3, Flask, Werkzeug, SQLite, pypdf, python-docx, OpenRouter vision OCR, HTML5, Bootstrap 5, custom CSS, and vanilla JavaScript.
 
+Image OCR uses `OPENROUTER_VISION_MODEL` (`openrouter/free` by default), which lets OpenRouter select a free model that supports image input. You can override it with another vision-capable model slug.
+
 ```text
 app.py                 Flask routes, extraction, and similarity engine
 requirements.txt       Python dependencies
