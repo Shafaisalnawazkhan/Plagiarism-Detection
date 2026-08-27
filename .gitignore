@@ -1,0 +1,27 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Runtime data
+database/*.db
+database/*.db-*
+uploads/*
+!uploads/.gitkeep
+
+# Trained model artifacts
+veritas_trained_model/
+models/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

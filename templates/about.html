@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}How It Works — VeritasCheck{% endblock %}
+{% block content %}
+<section class="page-header text-center"><div class="container narrow"><span class="eyebrow">Transparent by design</span><h1>A simple path from text to evidence.</h1><p>VeritasCheck compares the content you provide. It does not search the internet or issue a definitive plagiarism verdict.</p></div></section>
+<section class="section-space pt-0"><div class="container"><div class="row g-4">
+  {% for number, icon, title, text in [('01','bi-file-text','Input','Paste text or upload a PDF/TXT document.'),('02','bi-arrow-left-right','Compare','The backend calculates similarity against your supplied reference content.'),('03','bi-clipboard2-check','Review','Inspect similarity percentages and potentially matching passages.')] %}
+  <div class="col-md-4"><article class="step-card"><span class="step-number">{{ number }}</span><span class="icon-box"><i class="bi {{ icon }}"></i></span><h2>{{ title }}</h2><p>{{ text }}</p></article></div>{% endfor %}
+  </div><div class="future-card"><div><span class="eyebrow">Designed to evolve</span><h2>Future AI Layer</h2><p>The current transparent word-frequency baseline can later be augmented with semantic models while keeping evidence central.</p></div><ul><li>Sentence Transformers</li><li>Multilingual embeddings</li><li>Larger document corpus</li><li>Database-backed history</li><li>AI-generated-content signals</li><li>Advanced semantic similarity</li></ul></div>
+</div></section>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}VeritasCheck — Document Similarity Analysis{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-7">
+        <span class="eyebrow"><i class="bi bi-stars"></i> Academic clarity, made simple</span>
+        <h1>Check originality with a clearer, calmer workflow.</h1>
+        <p class="hero-copy">Analyze documents for textual similarity, identify matching passages, and review evidence through a simple academic-focused workflow.</p>
+        <div class="d-flex flex-wrap gap-3"><a class="btn btn-primary btn-lg" href="{{ url_for('checker') }}">Analyze My Document <i class="bi bi-arrow-right"></i></a><a class="btn btn-light btn-lg" href="{{ url_for('about') }}">See How It Works</a></div>
+      </div>
+      <div class="col-lg-5">
+        <div class="hero-visual">
+          <div class="product-preview"><div class="preview-badge"><i class="bi bi-shield-check"></i></div><span class="status-pill"><i class="bi bi-check-circle"></i> Ready to analyze</span><p class="preview-kicker">VERITASCHECK ACADEMIC SYSTEM</p><h2>AI-Based Plagiarism Detection &amp; Document Similarity Analysis</h2><p>Upload a document, compare supplied sources, and review highlighted evidence page by page.</p><div class="preview-flow"><span><i class="bi bi-cloud-arrow-up"></i><b>Upload</b></span><i class="bi bi-arrow-right"></i><span><i class="bi bi-intersect"></i><b>Compare</b></span><i class="bi bi-arrow-right"></i><span><i class="bi bi-highlighter"></i><b>Review</b></span></div><a href="{{ url_for('checker') }}">Open document workspace <i class="bi bi-arrow-up-right"></i></a></div>
+        </div>
+      </div>
+    </div>
+    <div class="trust-row"><span><i class="bi bi-check-circle"></i> Free to use</span><span><i class="bi bi-phone"></i> Mobile friendly</span><span><i class="bi bi-file-earmark-pdf"></i> PDF/TXT support</span><span><i class="bi bi-lightning"></i> Easy analysis</span><span><i class="bi bi-search"></i> Evidence-based results</span></div>
+  </div>
+</section>
+<section class="section-space">
+  <div class="container"><div class="section-heading"><span class="eyebrow">A focused workflow</span><h2>From document to useful evidence</h2><p>Everything you need to make a thoughtful first review—without unnecessary complexity.</p></div>
+    <div class="row g-4">
+      {% for icon, title, text in [('bi-file-earmark-arrow-up','Simple Document Input','Paste text or upload a supported document in seconds.'),('bi-intersect','Similarity Analysis','Receive an understandable comparison percentage.'),('bi-card-checklist','Evidence-Based Results','Review matching passages, not just a single score.'),('bi-display','Responsive Experience','Work smoothly across mobile, tablet, and desktop.')] %}
+      <div class="col-md-6 col-xl-3"><article class="feature-card"><span class="icon-box"><i class="bi {{ icon }}"></i></span><h3>{{ title }}</h3><p>{{ text }}</p></article></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
